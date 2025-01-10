@@ -1916,7 +1916,7 @@ class Project(FromDictMixin):
         numerator: pd.DataFrame
         if which == "net":
             numerator = (
-                1 - self.total_loss_ratio(environmental_loss_ratio=environmental_loss_ratio)
+                1 - self.loss_ratio(environmental_loss_ratio=environmental_loss_ratio)
             ) * self.energy_potential(
                 frequency="month-year",
                 by="turbine",
@@ -2751,7 +2751,9 @@ class Project(FromDictMixin):
         """
         # Static values
         fcr = self.fixed_charge_rate
-        net_aep = self.energy_production(units="mw", per_capacity="kw", aep=True, with_losses=True)
+        net_aep = self.energy_production(
+            units="mw", per_capacity="kw", aep=True
+        )  # , with_losses=True)
 
         # Handle CapEx outputs from ORBIT
         try:
