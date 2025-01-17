@@ -1815,12 +1815,12 @@ class Project(FromDictMixin):
             ]
             loss_breakdown = pd.DataFrame(
                 [
-                    environmental_loss_ratio,
-                    availability,
-                    wake_loss_ratio,
-                    technical_loss_ratio,
-                    electrical_loss_ratio,
-                    total_loss_ratio,
+                    100 * environmental_loss_ratio,
+                    100 * availability,
+                    100 * wake_loss_ratio,
+                    100 * technical_loss_ratio,
+                    100 * electrical_loss_ratio,
+                    100 * total_loss_ratio,
                 ],
                 index=loss_types,
                 columns=["Loss Ratio"],
