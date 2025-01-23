@@ -1,8 +1,8 @@
 # Fixed bottom base case for COE Review 2024 Edition (uses 2023 as base year)
 site:
-  depth: 34  # COE Review 2021
-  distance: 116  # COE Review 2021
-  distance_to_landfall: 50  # COE Review 2021
+  depth: 54  # COE Review 2021
+  distance: 130  # COE Review 2021
+  distance_to_landfall: 78  # COE Review 2021
   mean_windspeed: 9.17   # avg from weather profile in the Vineyard Wind 1 site
 plant:
   layout: grid
@@ -11,7 +11,7 @@ plant:
   substation_distance: 1
   turbine_spacing: 7  # COE Review 2021
 landfall:
-  interconnection_distance: 9  # COE Review 2021
+  interconnection_distance: 12  # COE Review 2021
   trench_length: 7   # COE Review 2021
 turbine: 12MW_generic
 port:
@@ -68,5 +68,5 @@ install_phases:
 
 project_parameters:
   turbine_capex: 1500 # new assumed turbine price COE Review 2022
-  commissioning: 0.01
-  decommissioning: 0.15
+  commissioning_factor: 0.01
+  decommissioning_factor: 0.17

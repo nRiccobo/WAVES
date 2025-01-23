@@ -1312,6 +1312,54 @@ class Project(FromDictMixin):
             return capex
         return capex.values[0, 1]
 
+    @validate_common_inputs(which=["per_capacity"])
+    def soft_capex(
+        self, breakdown: bool = False, per_capacity: str | None = None
+    ) -> pd.DataFrame | float:
+        """Provides a thin wrapper to ORBIT's ``ProjectManager`` CapEx calculations that
+        can provide a breakdown of total or normalize it by the project's capacity, in MW.
+
+        Parameters
+        ----------
+        breakdown : bool, optional
+            Provide a detailed view of the Soft CapEx breakdown, and a total, which is
+            the sum of the Construction Insurance, Decommissioning, Commissioning,
+             Procurement Contingency, Installation Contingency, and Construction
+              Financing categories. Defaults to False.
+        per_capacity : str, optional
+            Provide the CapEx normalized by the project's capacity, in the desired units. If
+            None, then the unnormalized CapEx is returned, otherwise it must be one of "kw",
+            "mw", or "gw". Defaults to None.
+
+        Returns
+        -------
+        pd.DataFrame | float
+            Project CapEx, normalized by :py:attr:`per_capacity`, if using, as either a
+            pandas DataFrame if :py:attr:`breakdown` is True, otherwise, a float total.
+        """
+        if breakdown:
+            soft_capex = pd.DataFrame.from_dict(
+                self.orbit.soft_capex_breakdown, orient="index", columns=["Soft CapEx"]
+            )
+            soft_capex.loc["Total"] = self.orbit.soft_capex
+        else:
+            soft_capex = pd.DataFrame(
+                [self.orbit.soft_capex], columns=["Soft CapEx"], index=pd.Index(["Total"])
+            )
+
+        if per_capacity is None:
+            if breakdown:
+                return soft_capex
+            return soft_capex.values[0, 0]
+
+        capacity = self.capacity(per_capacity)
+        unit_map = {"kw": "kW", "mw": "MW", "gw": "GW"}
+        soft_capex[f"Soft CapEx per {unit_map[per_capacity]}"] = soft_capex / capacity
+
+        if breakdown:
+            return soft_capex
+        return soft_capex.values[0, 1]
+
     def array_system_total_cable_length(self):
         """Calculates the total length of the cables in the array system, in km.
 
