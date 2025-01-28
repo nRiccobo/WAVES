@@ -69,7 +69,7 @@ install_phases:
 project_parameters:
   turbine_capex: 1500 # new assumed turbine price COE Review 2022
   commissioning_factor: 0.0115
-  decommissioning_factor: 0.17
-  construction_insurance_factor: 0.02
+  decommissioning_factor: 0.175
+  construction_insurance_factor: 0.0204
   site_auction_price: 100e6
-  procurement_contingency_factor: 0.06
+  procurement_contingency_factor: 0.0575
