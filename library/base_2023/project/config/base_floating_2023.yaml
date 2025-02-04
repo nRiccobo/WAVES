@@ -24,7 +24,7 @@ connect_floris_to_layout: true
 conenct_orbit_array_design: true
 
 # High-level project financials
-fixed_charge_rate: 0.0648 # real FCR from national LCOE study, 25 year lifetime instead of 30
+fixed_charge_rate: 0.0767 # real FCR from national LCOE study, 25 year lifetime instead of 30
 discount_rate: 0.025
 loss_ratio: 0.1
 offtake_price: 83.30
@@ -153,7 +153,7 @@ run:
       cut_in_wind_speed: 3.0
       cut_out_wind_speed: 25.0  # standard ws range
 report_config:
-  name: Base Floating 2022
+  name: Base Floating 2023
   "# Turbines":
     metric: n_turbines
   Turbine Rating (MW):
