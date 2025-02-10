@@ -99,3 +99,11 @@ def load_yaml(path: str | Path, fname: str | Path) -> Any:
     """
     path = Path(path).resolve()
     return yaml.load(open(path / fname), Loader=custom_loader)
+
+
+def write_yaml(path: str | Path, fname: str | Path, data: dict):
+    """Writes a yaml file based on a dictionary input."""
+    path = Path(path).resolve()
+
+    with Path(path / fname).open("w") as outfile:
+        yaml.dump(data, outfile, sort_keys=False, default_flow_style=False)
