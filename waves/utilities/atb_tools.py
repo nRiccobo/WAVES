@@ -12,7 +12,7 @@ from waves.utilities import load_yaml, write_yaml
 
 
 def check_ref_sites(path=str | Path, filename=str | Path, verbose=True):
-    """Read in the reference site excel file. Skip the first row"""
+    """Read in the reference site excel file. Skip the first row."""
     path = Path(path).resolve()
 
     df = pd.read_excel(path / filename, skiprows=[0])
@@ -21,19 +21,42 @@ def check_ref_sites(path=str | Path, filename=str | Path, verbose=True):
     files_to_check = [f"Site{row['Site']}_atb_{year}.yaml" for _, row in df.iterrows()]
 
     # determine which files are present based on the reference site table.
-    find_missing_files(path, files_to_check, "base_fixed_bottom_2023.yaml", verbose=verbose)
+    template_path = Path(path.parent / "config")
+    find_missing_files(
+        path, files_to_check, Path(template_path / "base_fixed_bottom_2023.yaml"), verbose=verbose
+    )
 
     # update the files based on data in the reference site table.
-    update_waves_file(path, files_to_check, df, verbose=verbose)
+    update_waves_files(path, files_to_check, df, verbose=verbose)
 
-    orbit_path = Path(path / "orbit").resolve()
+    orbit_path = Path(path / "orbit_config").resolve()
 
     orbit_files_to_check = [
         f"Site{row['Site']}_atb_{year}_install.yaml" for _, row in df.iterrows()
     ]
 
-    # find_missing_files(orbit_path, orbit_files_to_check, "base_fixed_bottom_2023_install.yaml", verbose=verbose)
-    # update_orbit_file(orbit_path, orbit_files_to_check)
+    find_missing_files(
+        orbit_path,
+        orbit_files_to_check,
+        Path(template_path / "base_fixed_bottom_2023_install.yaml"),
+        verbose=verbose,
+    )
+    update_orbit_files(orbit_path, orbit_files_to_check, df, verbose=verbose)
+
+    wombat_path = Path(path / "wombat_config").resolve()
+
+    wombat_files_to_check = [
+        f"Site{row['Site']}_atb_{year}_operations.yaml" for _, row in df.iterrows()
+    ]
+
+    find_missing_files(
+        wombat_path,
+        wombat_files_to_check,
+        Path(template_path / "base_fixed_bottom_2023_operations.yaml"),
+        verbose=verbose,
+    )
+
+    update_wombat_files(wombat_path, wombat_files_to_check, df, verbose=verbose)
 
     if verbose:
         # print(f"Length: {len(df)}")
@@ -51,10 +74,10 @@ def find_missing_files(path, files_to_check, file_temp, verbose=False):
         print("Missing files: ", _missing)
 
     for m in _missing:
-        shutil.copy(path.parent / "config" / file_temp, path / m)
+        shutil.copy(file_temp, path / m)
 
 
-def update_waves_file(path, files_to_check, df, verbose=False):
+def update_waves_files(path, files_to_check, df, verbose=False):
     """Update the files that exist."""
     _found = [file for file in files_to_check if (path / file).exists()]
 
@@ -87,7 +110,7 @@ def update_waves_file(path, files_to_check, df, verbose=False):
             path, files_to_check[i], site_config_mapping, verbose=verbose
         )
         # print(config)
-        print(need_change)
+        # print(need_change)
 
         if need_change:
             config = load_yaml(path, need_change[0])
@@ -104,18 +127,135 @@ def update_waves_file(path, files_to_check, df, verbose=False):
         # print(f"{row}")
 
 
-def _check_config_for_changes(path, filename, mapping_dict, verbose=False):
-    """Check the config yaml file for any key/value updates based on the config_mapping"""
-    config = load_yaml(path, filename)
+def update_orbit_files(path, files_to_check, df, verbose=False):
+    """Update the orbit files that exist."""
+    _found = [file for file in files_to_check if (path / file).exists()]
+
+    _found = pd.Series(_found).to_list()
 
     if verbose:
-        print("File: ", filename)
+        print("Found files: ", _found)
+
+    for i, row in df.iterrows():
+        # file = files_to_check[i]
+        # parse out useful strings/filenames/etc
+        # filename = file.split(".")[0]
+
+        if "Monopile" in row["Foundation type"]:
+            print(f"{row['Site']} is a monopile")
+            monopile_design = {"monopile_steel_cost": 3487.5, "tp_steel_cost": 5006.5}
+            semisubmersible_design = {}
+
+        elif "Semisubmersible" in row["Foundation type"]:
+            print(f"{row['Site']} is a semisub")
+            monopile_design = {}
+            semisubmersible_design = {}
+
+        # TODO: Include dynamic cables if floating
+        if "HVAC" in row["Export system"]:
+            cables = "XLPE_1000mm_220kV"
+
+        elif "HVDC" in row["Export system"]:
+            cables = "HVDC_2000mm_320kV"
+
+        # assign to a mapping dictionary to rewrite config files
+
+        site_config_mapping = {
+            "monopile_design": monopile_design,
+            "semisubmersible_design": semisubmersible_design,
+            "export_system_design": {"cables": cables},
+            "site": {
+                "depth": row["Water depth, m"],
+                "mean_windspeed": row["Mean wind speed (at 137 m), m/s"],
+                "distance": row["Distance to port, km"],
+                "distance_to_landfall": row["Export cable length, km"],
+            },
+            "plant": {
+                "num_turbines": int(row["Plant capacity, MW"] / row["Turbine rating, MW"]),
+                "turbine_spacing": row["Spacing between turbines, km"][0],
+            },
+            "turbine": str(row["Turbine rating, MW"]) + "MW_generic",
+        }
+
+        need_change = _check_config_for_changes(
+            path, files_to_check[i], site_config_mapping, verbose=verbose
+        )
+        # print(need_change)
+
+        if need_change:
+            config = load_yaml(path, need_change[0])
+
+            for k, v in site_config_mapping.items():
+                if isinstance(v, dict):
+                    for k2, v2 in v.items():
+                        config[k][k2] = v2
+
+                else:
+                    config[k] = v
+
+            write_yaml(path, files_to_check[i], config)
+
+
+def update_wombat_files(path, files_to_check, df, verbose=False):
+    """Update the wombat files that exist."""
+    _found = [file for file in files_to_check if (path / file).exists()]
+
+    _found = pd.Series(_found).to_list()
+
+    if verbose:
+        print("Found files: ", _found)
+
+    for i, row in df.iterrows():
+        file = files_to_check[i]
+        # parse out useful strings/filenames/etc
+        filename = file.split(".")[0]
+        weather_file = (
+            "era5_40.0N_72.5W_1990_2020.csv"
+            if row["Fixed/floating"] == "Fixed"
+            else "era5_41.0N_125.0W_1989_2019.csv"
+        )
+        # assign to a mapping dictionary to rewrite config files
+
+        site_config_mapping = {
+            "name": filename,
+            "weather": weather_file,
+            "project_capacity": int(row["Plant capacity, MW"]),
+        }
+
+        need_change = _check_config_for_changes(
+            path, files_to_check[i], site_config_mapping, verbose=verbose
+        )
+        # print(need_change)
+
+        if need_change:
+            config = load_yaml(path, need_change[0])
+
+            for k, v in site_config_mapping.items():
+                if isinstance(v, dict):
+                    for k2, v2 in v.items():
+                        config[k][k2] = v2
+
+                else:
+                    config[k] = v
+
+            write_yaml(path, files_to_check[i], config)
+
+
+def _check_config_for_changes(path, filename, mapping_dict, verbose=False):
+    """Check the config yaml file for any key/value updates based on the config_mapping."""
+    config = load_yaml(path, filename)
 
     _to_update = []
     for k, v in mapping_dict.items():
-        if config[k] != v:
-            print(f"{k} has different value. ")
+        try:
+            if config[k] != v:
+                print(f"{filename} {k} has different value. ")
 
-            _to_update.append(filename)
+                _to_update.append(filename)
 
-    return _to_update
+        except KeyError:
+            print(f"{filename} {k} doesn't exist. ")
+
+            config[k] = v
+
+    return list(set(_to_update))
