@@ -114,7 +114,7 @@ def update_waves_files(path, files_to_check, df, verbose=False):
         # assign to a mapping dictionary to rewrite config files
         site_config_mapping = {
             "turbine_type": turbine_type,
-            "orbit_config": f"{filename}_installation.yaml",
+            "orbit_config": f"{filename}_install.yaml",
             "wombat_config": f"{filename}_operations.yaml",
             "floris_config": f"{filename}_floris_jensen.yaml",
             "weather_profile" : weather_file,
