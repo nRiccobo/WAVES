@@ -58,6 +58,20 @@ def check_ref_sites(path=str | Path, filename=str | Path, verbose=True):
 
     update_wombat_files(wombat_path, wombat_files_to_check, df, verbose=verbose)
 
+    floris_path = Path(path / "floris_config").resolve()
+    floris_str = "floris_jensen"
+    floris_files_to_check = [
+        f"Site{row['Site']}_atb_{year}_{floris_str}.yaml" for _, row in df.iterrows()
+    ]
+
+    find_missing_files(
+        floris_path,
+        floris_files_to_check,
+        Path(template_path / f"base_fixed_bottom_2023_{floris_str}.yaml"),
+    )
+
+    update_floris_files(floris_path, floris_files_to_check, df, verbose=verbose)
+
     if verbose:
         # print(f"Length: {len(df)}")
         # print(df.columns)
@@ -208,7 +222,7 @@ def update_wombat_files(path, files_to_check, df, verbose=False):
     for i, row in df.iterrows():
         file = files_to_check[i]
         # parse out useful strings/filenames/etc
-        filename = file.split(".")[0]
+        filename = "_".join(file.split("_")[:-1])
         weather_file = (
             "era5_40.0N_72.5W_1990_2020.csv"
             if row["Fixed/floating"] == "Fixed"
@@ -238,6 +252,48 @@ def update_wombat_files(path, files_to_check, df, verbose=False):
                 else:
                     config[k] = v
 
+            write_yaml(path, files_to_check[i], config)
+
+
+def update_floris_files(path, files_to_check, df, verbose=False):
+    """Update the floris files that exist."""
+    _found = [file for file in files_to_check if (path / file).exists()]
+
+    _found = pd.Series(_found).to_list()
+
+    if verbose:
+        print("Found files: ", _found)
+
+    for i, row in df.iterrows():
+        file = files_to_check[i]
+        # parse out useful strings/filenames/etc
+        filename = "_".join(file.split("_")[:-1])
+
+        # assign to a mapping dictionary to rewrite config files
+        # TODO: Add floris tool to update 1000MW or 600MW farms and layouts
+        site_config_mapping = {
+            "description": filename + " Layout using Jensen-Jimenez",
+            "name": filename + " Layout Jensen",
+        }
+
+        need_change = _check_config_for_changes(
+            path, files_to_check[i], site_config_mapping, verbose=verbose
+        )
+        # print(config)
+        # print(need_change)
+
+        if need_change:
+            config = load_yaml(path, need_change[0])
+
+            for k, v in site_config_mapping.items():
+                if isinstance(v, dict):
+                    for k2, v2 in v.items():
+                        config[k][k2] = v2
+
+                else:
+                    config[k] = v
+
+            # with open(Path(path / files_to_check[i]), 'w') as fw:
             write_yaml(path, files_to_check[i], config)
 
 
