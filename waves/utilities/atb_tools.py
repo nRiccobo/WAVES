@@ -117,7 +117,8 @@ def update_waves_files(path, files_to_check, df, verbose=False):
             "orbit_config": f"{filename}_installation.yaml",
             "wombat_config": f"{filename}_operations.yaml",
             "floris_config": f"{filename}_floris_jensen.yaml",
-            "weather_profile": weather_file,
+            "weather_profile" : weather_file,
+            "report_config" : {"name" : f"{filename.replace('_', ' ').upper()}"},
         }
 
         need_change = _check_config_for_changes(
@@ -130,9 +131,12 @@ def update_waves_files(path, files_to_check, df, verbose=False):
             config = load_yaml(path, need_change[0])
 
             for k, v in site_config_mapping.items():
-                config[k] = v
+                if isinstance(v, dict):
+                    for k2, v2 in v.items():
+                        config[k][k2] = v2
 
-            config["report_config"]["name"] = f"{filename.replace('_', ' ').upper()}"
+                else:
+                    config[k] = v
 
             # with open(Path(path / files_to_check[i]), 'w') as fw:
             write_yaml(path, files_to_check[i], config)
@@ -156,12 +160,12 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
         # filename = file.split(".")[0]
 
         if "Monopile" in row["Foundation type"]:
-            print(f"{row['Site']} is a monopile")
+            #print(f"{row['Site']} is a monopile")
             monopile_design = {"monopile_steel_cost": 3487.5, "tp_steel_cost": 5006.5}
             semisubmersible_design = {}
 
         elif "Semisubmersible" in row["Foundation type"]:
-            print(f"{row['Site']} is a semisub")
+            #print(f"{row['Site']} is a semisub")
             monopile_design = {}
             semisubmersible_design = {}
 
@@ -303,11 +307,22 @@ def _check_config_for_changes(path, filename, mapping_dict, verbose=False):
 
     _to_update = []
     for k, v in mapping_dict.items():
-        try:
-            if config[k] != v:
-                print(f"{filename} {k} has different value. ")
 
-                _to_update.append(filename)
+        try:
+            if isinstance(v, dict):
+
+                for k2, v2 in v.items():
+                    if config[k][k2] != v2:
+                        print(f"{filename} {k2} has different value. ")
+
+                        _to_update.append(filename)
+
+            else:
+
+                if config[k] != v:
+                    print(f"{filename} {k} has different value. ")
+
+                    _to_update.append(filename)
 
         except KeyError:
             print(f"{filename} {k} doesn't exist. ")
