@@ -87,6 +87,8 @@ def find_missing_files(path, files_to_check, file_temp, verbose=False):
     if verbose:
         print("Missing files: ", _missing)
 
+    if not path.is_dir(): path.mkdir(parents=True, exist_ok=True)
+
     for m in _missing:
         shutil.copy(file_temp, path / m)
 
@@ -114,9 +116,9 @@ def update_waves_files(path, files_to_check, df, verbose=False):
         # assign to a mapping dictionary to rewrite config files
         site_config_mapping = {
             "turbine_type": turbine_type,
-            "orbit_config": f"{filename}_install.yaml",
-            "wombat_config": f"{filename}_operations.yaml",
-            "floris_config": f"{filename}_floris_jensen.yaml",
+            "orbit_config": f"orbit_config/{filename}_install.yaml",
+            "wombat_config": f"wombat_config/{filename}_operations.yaml",
+            "floris_config": f"floris_config/{filename}_floris_jensen.yaml",
             "weather_profile" : weather_file,
             "report_config" : {"name" : f"{filename.replace('_', ' ').upper()}"},
         }
