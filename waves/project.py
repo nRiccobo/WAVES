@@ -511,6 +511,7 @@ class Project(FromDictMixin):
             self.orbit_config_dict = self.orbit_config
 
         if self.orbit_start_date is not None:
+            print(self.orbit_config_dict["install_phases"])
             for phase, start in self.orbit_config_dict["install_phases"].items():
                 if start == 0:
                     self.orbit_config_dict["install_phases"][phase] = self.orbit_start_date
@@ -1064,7 +1065,7 @@ class Project(FromDictMixin):
 
     @validate_common_inputs(which=["per_capacity"])
     def capex(
-        self, breakdown: bool = False, per_capacity: str | None = None
+        self, breakdown: bool = False, per_capacity: str | None = None, million: bool = False
     ) -> pd.DataFrame | float:
         """Provides a thin wrapper to ORBIT's ``ProjectManager`` CapEx calculations that
         can provide a breakdown of total or normalize it by the project's capacity, in MW.
@@ -1085,6 +1086,11 @@ class Project(FromDictMixin):
             Project CapEx, normalized by :py:attr:`per_capacity`, if using, as either a
             pandas DataFrame if :py:attr:`breakdown` is True, otherwise, a float total.
         """
+        if million:
+            _mult = 1e-6
+        else:
+            _mult = 1.0
+
         if breakdown:
             capex = pd.DataFrame.from_dict(
                 self.orbit.capex_breakdown, orient="index", columns=["CapEx"]
@@ -1092,7 +1098,7 @@ class Project(FromDictMixin):
             capex.loc["Total"] = self.orbit.total_capex
         else:
             capex = pd.DataFrame(
-                [self.orbit.total_capex], columns=["CapEx"], index=pd.Index(["Total"])
+                [self.orbit.total_capex * _mult], columns=["CapEx"], index=pd.Index(["Total"])
             )
 
         if per_capacity is None:
@@ -1110,7 +1116,7 @@ class Project(FromDictMixin):
 
     @validate_common_inputs(which=["per_capacity"])
     def soft_capex(
-        self, breakdown: bool = False, per_capacity: str | None = None
+        self, breakdown: bool = False, per_capacity: str | None = None, million: bool = False
     ) -> pd.DataFrame | float:
         """Provides a thin wrapper to ORBIT's ``ProjectManager`` CapEx calculations that
         can provide a breakdown of total or normalize it by the project's capacity, in MW.
@@ -1133,6 +1139,11 @@ class Project(FromDictMixin):
             Project CapEx, normalized by :py:attr:`per_capacity`, if using, as either a
             pandas DataFrame if :py:attr:`breakdown` is True, otherwise, a float total.
         """
+        if million:
+            _mult = 1e-6
+        else:
+            _mult = 1.0
+
         if breakdown:
             soft_capex = pd.DataFrame.from_dict(
                 self.orbit.soft_capex_breakdown, orient="index", columns=["Soft CapEx"]
@@ -1140,7 +1151,7 @@ class Project(FromDictMixin):
             soft_capex.loc["Total"] = self.orbit.soft_capex
         else:
             soft_capex = pd.DataFrame(
-                [self.orbit.soft_capex], columns=["Soft CapEx"], index=pd.Index(["Total"])
+                [self.orbit.soft_capex * _mult], columns=["Soft CapEx"], index=pd.Index(["Total"])
             )
 
         if per_capacity is None:
