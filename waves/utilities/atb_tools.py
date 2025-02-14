@@ -252,7 +252,7 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
                     for k2, v2 in v.items():
                         print("Update2: ", k, k2, v2)
                         print(type(config), type(k), type(k2), type(v2))
-                        print(config[k])
+                        #print(config[k])
                         # if isinstance(v2, dict):
                         #    for k3, v3 in v2.items():
 
@@ -405,3 +405,40 @@ def _check_config_for_changes(path, filename, mapping_dict, verbose=False):
             config[k] = v
 
     return list(set(_to_update))
+
+import matplotlib.pyplot as plt
+#import seaborn as sns
+
+def breakdown_plots(df):
+    """"""
+
+    # Raw CapEx
+    fig = plt.figure(figsize=(8, 5), dpi=200)
+    ax = fig.add_subplot(111)
+
+    # Set all the columns as x labels (strip some of the )
+    xlabels = list(df.columns)
+
+    x_data = df.column
+
+    print(df[x_data[4]].index.tolist())
+    #df.T.plot(kind='bar', stacked=True, ax=ax)
+    new_df = pd.DataFrame()
+
+    # have to drop soft cost columns again.
+    #soft_costs=['construction_insurance_capex',
+    #            'decomissioning_costs', 'construction_financing', 'procurement_contingency_costs',
+    #            'install_contingency_costs', 'project_completion_capex']
+
+    #for x in x_data:
+    #    new_df = pd.concat([new_df, df[x].T.drop(labels=soft_costs, axis=1)])
+
+    #new_df.plot(kind='bar', stacked=True, ax=ax, color=sns.color_palette("Set1", len(new_df.iloc[0])))
+    plt.xticks(range(0,len(x_data)), xlabels, rotation=45)
+    plt.tight_layout()
+
+    ax.set_xlabel("")
+    ax.set_ylabel("CapEx ($)")
+
+    #handles, labels = ax.get_legend_handles_labels()
+    ax.legend(bbox_to_anchor=(1.5, 0), loc='lower right', reverse=True)
