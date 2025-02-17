@@ -511,7 +511,7 @@ class Project(FromDictMixin):
             self.orbit_config_dict = self.orbit_config
 
         if self.orbit_start_date is not None:
-            print(self.orbit_config_dict["install_phases"])
+            #print(self.orbit_config_dict["install_phases"])
             for phase, start in self.orbit_config_dict["install_phases"].items():
                 if start == 0:
                     self.orbit_config_dict["install_phases"][phase] = self.orbit_start_date

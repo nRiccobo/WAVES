@@ -165,14 +165,16 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
     #   shutil.copy(path.parent/ "base_fixed_bottom_2023_install.yaml", path / m)
 
     for i, row in df.iterrows():
-        # file = files_to_check[i]
+        file = files_to_check[i]
         # parse out useful strings/filenames/etc
         # filename = file.split(".")[0]
+        if file in missing:
+            print(f"{file} is missing.")
 
         if "Monopile" in row["Foundation type"]:
             # print(f"{row['Site']} is a monopile")
             for m in missing:
-                if str(row["Site"]) in m:
+                if file in m:
                     shutil.copy(path.parent / "base_fixed_bottom_2023_install.yaml", path / m)
 
             monopile_design = {"monopile_steel_cost": 3487.5, "tp_steel_cost": 5006.5}
@@ -188,7 +190,7 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
         elif "Semisubmersible" in row["Foundation type"]:
             # print(f"{row['Site']} is a semisub")
             for m in missing:
-                if str(row["Site"]) in m:
+                if file in m:
                     shutil.copy(path.parent / "base_floating_2023_install.yaml", path / m)
 
             monopile_design = {}
@@ -242,16 +244,16 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
         # print(need_change)
 
         if need_change:
-            print(need_change[0])
+            #print(need_change[0])
             config = load_yaml(path, need_change[0])
 
             for k, v in site_config_mapping.items():
-                print("Update: ", k, v)
+                #print("Update: ", k, v)
 
                 if isinstance(v, dict):
                     for k2, v2 in v.items():
-                        print("Update2: ", k, k2, v2)
-                        print(type(config), type(k), type(k2), type(v2))
+                        #print("Update2: ", k, k2, v2)
+                        #print(type(config), type(k), type(k2), type(v2))
                         #print(config[k])
                         # if isinstance(v2, dict):
                         #    for k3, v3 in v2.items():
@@ -275,7 +277,7 @@ def update_wombat_files(path, files_to_check, df, verbose=False):
 
     for i, row in df.iterrows():
         for m in missing:
-            if str(row["Site"]) in m:
+            if files_to_check in m:
                 shutil.copy(path.parent / "base_floating_2023_operations.yaml", path / m)
 
         file = files_to_check[i]
@@ -421,7 +423,7 @@ def breakdown_plots(df):
 
     x_data = df.column
 
-    print(df[x_data[4]].index.tolist())
+    #print(df[x_data[4]].index.tolist())
     #df.T.plot(kind='bar', stacked=True, ax=ax)
     new_df = pd.DataFrame()
 
