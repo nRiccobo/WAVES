@@ -3,6 +3,7 @@
 __author__ = "Nick Riccobono"
 __email__ = "nicholas.riccobono@nrel.gov"
 
+import numpy as np
 import shutil
 from pathlib import Path
 
@@ -218,6 +219,12 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
             )
 
         # assign to a mapping dictionary to rewrite config files
+        if int(row['Plant capacity, MW']) == 1000:
+            layout_file = "1000mw_fixed_bottom_2023_layout"
+            project_capacity = 996
+        else:
+            layout_file = "base_fixed_bottom_2022_layout"
+            project_capacity = 600
 
         site_config_mapping = {
             # "monopile_design": monopile_design,
@@ -230,10 +237,11 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
                 "distance_to_landfall": row["Export cable length, km"],
             },
             "plant": {
-                "num_turbines": int(600 / row["Turbine rating, MW"]),
+                "num_turbines": int(project_capacity / row["Turbine rating, MW"]),
                 "turbine_spacing": int(row["Spacing between turbines, km"][0]),
             },
             "turbine": str(row["Turbine rating, MW"]) + "MW_generic",
+            "array_system_design" : {"cables" : {"location_data" : layout_file}}
             # "design_phases" : design_phases,
             # "install_phases" : install_phases,
         }
@@ -277,7 +285,7 @@ def update_wombat_files(path, files_to_check, df, verbose=False):
 
     for i, row in df.iterrows():
         for m in missing:
-            if files_to_check in m:
+            if files_to_check[i] in m:
                 shutil.copy(path.parent / "base_floating_2023_operations.yaml", path / m)
 
         file = files_to_check[i]
@@ -290,10 +298,18 @@ def update_wombat_files(path, files_to_check, df, verbose=False):
         )
         # assign to a mapping dictionary to rewrite config files
 
+        if int(row['Plant capacity, MW']) == 1000:
+            layout_file = "1000mw_fixed_bottom_2023_layout.csv"
+            project_capacity = 996
+        else:
+            layout_file = "base_fixed_bottom_2022_layout.csv"
+            project_capacity = 600
+
         site_config_mapping = {
             "name": filename,
             "weather": weather_file,
-            "project_capacity": 600,
+            "layout" : layout_file,
+            "project_capacity": project_capacity,
         }
 
         need_change = _check_config_for_changes(
@@ -331,9 +347,11 @@ def update_floris_files(path, files_to_check, df, verbose=False):
     if not path.is_dir():
         path.mkdir(parents=True, exist_ok=True)
 
+    floris_config = load_yaml(path.parent, "base_floating_2023_floris_jensen.yaml")
+
     for i, row in df.iterrows():
         for m in missing:
-            if str(row["Site"]) in m:
+            if files_to_check[i] in m:
                 shutil.copy(path.parent / "base_floating_2023_floris_jensen.yaml", path / m)
 
         file = files_to_check[i]
@@ -342,10 +360,32 @@ def update_floris_files(path, files_to_check, df, verbose=False):
 
         # assign to a mapping dictionary to rewrite config files
         # TODO: Add floris tool to update 1000MW or 600MW farms and layouts
+        floris_996mw_df = pd.read_csv(Path(path.parent / "floris_layout_996MW.csv"))
+
+        if int(row['Plant capacity, MW']) == 1000:
+            plant_capacity = 996 # 83 turbines x 12MW
+            layout_x = list(floris_996mw_df['layout_x'])
+            layout_y = list(floris_996mw_df['layout_y'])
+
+            turbine_type = list(floris_996mw_df['turbine_type'])
+        else:
+            plant_capacity = 600 # 50 x 12MW
+            layout_x = floris_config["farm"]["layout_x"]
+            layout_y = floris_config["farm"]["layout_y"]
+
+            turbine_type = floris_config["farm"]["turbine_type"]
+
+        #print(layout_x)
+
         site_config_mapping = {
             "description": filename + " Layout using Jensen-Jimenez",
             "name": filename + " Layout Jensen",
+            "farm" : {"layout_x" : layout_x,
+                      "layout_y" : layout_y,
+                      "turbine_type" : turbine_type,
+            }
         }
+        #print(len(site_config_mapping["farm"]["layout_y"]))
 
         need_change = _check_config_for_changes(
             path, files_to_check[i], site_config_mapping, verbose=verbose
@@ -407,6 +447,115 @@ def _check_config_for_changes(path, filename, mapping_dict, verbose=False):
             config[k] = v
 
     return list(set(_to_update))
+
+def _isPerfect(N):
+    """Function to check if a number is perfect square or not
+
+    taken from:
+    https://www.geeksforgeeks.org/closest-perfect-square-and-its-distance/
+    by sahishelangia
+    """
+    if (np.sqrt(N) - np.floor(np.sqrt(N)) != 0):
+        return False
+    return True
+
+
+def _getClosestPerfectSquare(N):
+    """Function to find the closest perfect square taking minimum steps to
+        reach from a number
+
+    taken from:
+    https://www.geeksforgeeks.org/closest-perfect-square-and-its-distance/
+    by sahishelangia
+    """
+    if (_isPerfect(N)):
+        distance = 0
+        return N, distance
+
+    # Variables to store first perfect square number above and below N
+    aboveN = -1
+    belowN = -1
+    n1 = 0
+
+    # Finding first perfect square number greater than N
+    n1 = N + 1
+    while (True):
+        if (_isPerfect(n1)):
+            aboveN = n1
+            break
+        else:
+            n1 += 1
+
+    # Finding first perfect square number less than N
+    n1 = N - 1
+    while (True):
+        if (_isPerfect(n1)):
+            belowN = n1
+            break
+        else:
+            n1 -= 1
+
+    # Variables to store the differences
+    diff1 = aboveN - N
+    diff2 = N - belowN
+
+    if (diff1 > diff2):
+        return belowN, -diff2
+    else:
+        return aboveN, diff1
+
+
+def make_floris_grid_layout(n_wt, D, grid_spc):
+    """Make a grid layout (close as possible to a square grid)
+
+    Inputs:
+    -------
+        n_wt : float
+            Number of wind turbines in the plant
+        D : float (or might want array_like if diff wt models are used)
+            Wind turbine rotor diameter(s) in meters
+        grid_spc : float
+            Spacing between rows and columns in number of rotor diams D
+        plant_cap_MW : float
+            Total wind plant capacity in MW
+
+    Returns:
+    --------
+        layout_x : array_like
+            X positions of the wind turbines in the plant
+        layout_y : array_like
+            Y positions of the wind turbines in the plant
+    """
+
+    # Initialize layout variables
+    layout_x = []
+    layout_y = []
+
+    # Find the closest square root
+    close_square, dist = _getClosestPerfectSquare(n_wt)
+    side_length = int(np.sqrt(close_square))
+
+    # Build a square grid
+    for i in range(side_length):
+        for k in range(side_length):
+            layout_x.append(i*grid_spc*D)
+            layout_y.append(k*grid_spc*D)
+
+    # Check dist and determine what to do
+    if dist == 0:
+        # do nothing
+        pass
+    elif dist > 0:
+        # square>n_wt : remove locations
+        del(layout_x[close_square-dist:close_square])
+        del(layout_y[close_square-dist:close_square])
+    else:
+        # square < n_w_t : add a partial row
+        for i in range(abs(dist)):
+            layout_x.append(np.sqrt(close_square)*grid_spc*D)
+            layout_y.append(i*grid_spc*D)
+
+    return layout_x, layout_y
 
 import matplotlib.pyplot as plt
 #import seaborn as sns
