@@ -3,10 +3,10 @@
 __author__ = "Nick Riccobono"
 __email__ = "nicholas.riccobono@nrel.gov"
 
-import numpy as np
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from waves.utilities import load_yaml, write_yaml
@@ -219,7 +219,7 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
             )
 
         # assign to a mapping dictionary to rewrite config files
-        if int(row['Plant capacity, MW']) == 1000:
+        if int(row["Plant capacity, MW"]) == 1000:
             layout_file = "1000mw_fixed_bottom_2023_layout"
             project_capacity = 996
         else:
@@ -241,7 +241,7 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
                 "turbine_spacing": int(row["Spacing between turbines, km"][0]),
             },
             "turbine": str(row["Turbine rating, MW"]) + "MW_generic",
-            "array_system_design" : {"cables" : {"location_data" : layout_file}}
+            "array_system_design": {"cables": {"location_data": layout_file}}
             # "design_phases" : design_phases,
             # "install_phases" : install_phases,
         }
@@ -252,17 +252,17 @@ def update_orbit_files(path, files_to_check, df, verbose=False):
         # print(need_change)
 
         if need_change:
-            #print(need_change[0])
+            # print(need_change[0])
             config = load_yaml(path, need_change[0])
 
             for k, v in site_config_mapping.items():
-                #print("Update: ", k, v)
+                # print("Update: ", k, v)
 
                 if isinstance(v, dict):
                     for k2, v2 in v.items():
-                        #print("Update2: ", k, k2, v2)
-                        #print(type(config), type(k), type(k2), type(v2))
-                        #print(config[k])
+                        # print("Update2: ", k, k2, v2)
+                        # print(type(config), type(k), type(k2), type(v2))
+                        # print(config[k])
                         # if isinstance(v2, dict):
                         #    for k3, v3 in v2.items():
 
@@ -298,7 +298,7 @@ def update_wombat_files(path, files_to_check, df, verbose=False):
         )
         # assign to a mapping dictionary to rewrite config files
 
-        if int(row['Plant capacity, MW']) == 1000:
+        if int(row["Plant capacity, MW"]) == 1000:
             layout_file = "1000mw_fixed_bottom_2023_layout.csv"
             project_capacity = 996
         else:
@@ -308,7 +308,7 @@ def update_wombat_files(path, files_to_check, df, verbose=False):
         site_config_mapping = {
             "name": filename,
             "weather": weather_file,
-            "layout" : layout_file,
+            "layout": layout_file,
             "project_capacity": project_capacity,
         }
 
@@ -362,30 +362,31 @@ def update_floris_files(path, files_to_check, df, verbose=False):
         # TODO: Add floris tool to update 1000MW or 600MW farms and layouts
         floris_996mw_df = pd.read_csv(Path(path.parent / "floris_layout_996MW.csv"))
 
-        if int(row['Plant capacity, MW']) == 1000:
-            plant_capacity = 996 # 83 turbines x 12MW
-            layout_x = list(floris_996mw_df['layout_x'])
-            layout_y = list(floris_996mw_df['layout_y'])
+        if int(row["Plant capacity, MW"]) == 1000:
+            plant_capacity = 996  # 83 turbines x 12MW
+            layout_x = list(floris_996mw_df["layout_x"])
+            layout_y = list(floris_996mw_df["layout_y"])
 
-            turbine_type = list(floris_996mw_df['turbine_type'])
+            turbine_type = list(floris_996mw_df["turbine_type"])
         else:
-            plant_capacity = 600 # 50 x 12MW
+            plant_capacity = 600  # 50 x 12MW
             layout_x = floris_config["farm"]["layout_x"]
             layout_y = floris_config["farm"]["layout_y"]
 
             turbine_type = floris_config["farm"]["turbine_type"]
 
-        #print(layout_x)
+        # print(layout_x)
 
         site_config_mapping = {
             "description": filename + " Layout using Jensen-Jimenez",
             "name": filename + " Layout Jensen",
-            "farm" : {"layout_x" : layout_x,
-                      "layout_y" : layout_y,
-                      "turbine_type" : turbine_type,
-            }
+            "farm": {
+                "layout_x": layout_x,
+                "layout_y": layout_y,
+                "turbine_type": turbine_type,
+            },
         }
-        #print(len(site_config_mapping["farm"]["layout_y"]))
+        # print(len(site_config_mapping["farm"]["layout_y"]))
 
         need_change = _check_config_for_changes(
             path, files_to_check[i], site_config_mapping, verbose=verbose
@@ -448,6 +449,7 @@ def _check_config_for_changes(path, filename, mapping_dict, verbose=False):
 
     return list(set(_to_update))
 
+
 def _isPerfect(N):
     """Function to check if a number is perfect square or not
 
@@ -455,7 +457,7 @@ def _isPerfect(N):
     https://www.geeksforgeeks.org/closest-perfect-square-and-its-distance/
     by sahishelangia
     """
-    if (np.sqrt(N) - np.floor(np.sqrt(N)) != 0):
+    if np.sqrt(N) - np.floor(np.sqrt(N)) != 0:
         return False
     return True
 
@@ -468,7 +470,7 @@ def _getClosestPerfectSquare(N):
     https://www.geeksforgeeks.org/closest-perfect-square-and-its-distance/
     by sahishelangia
     """
-    if (_isPerfect(N)):
+    if _isPerfect(N):
         distance = 0
         return N, distance
 
@@ -479,8 +481,8 @@ def _getClosestPerfectSquare(N):
 
     # Finding first perfect square number greater than N
     n1 = N + 1
-    while (True):
-        if (_isPerfect(n1)):
+    while True:
+        if _isPerfect(n1):
             aboveN = n1
             break
         else:
@@ -488,8 +490,8 @@ def _getClosestPerfectSquare(N):
 
     # Finding first perfect square number less than N
     n1 = N - 1
-    while (True):
-        if (_isPerfect(n1)):
+    while True:
+        if _isPerfect(n1):
             belowN = n1
             break
         else:
@@ -499,7 +501,7 @@ def _getClosestPerfectSquare(N):
     diff1 = aboveN - N
     diff2 = N - belowN
 
-    if (diff1 > diff2):
+    if diff1 > diff2:
         return belowN, -diff2
     else:
         return aboveN, diff1
@@ -519,14 +521,13 @@ def make_floris_grid_layout(n_wt, D, grid_spc):
         plant_cap_MW : float
             Total wind plant capacity in MW
 
-    Returns:
-    --------
+    Returns
+    -------
         layout_x : array_like
             X positions of the wind turbines in the plant
         layout_y : array_like
             Y positions of the wind turbines in the plant
     """
-
     # Initialize layout variables
     layout_x = []
     layout_y = []
@@ -538,8 +539,8 @@ def make_floris_grid_layout(n_wt, D, grid_spc):
     # Build a square grid
     for i in range(side_length):
         for k in range(side_length):
-            layout_x.append(i*grid_spc*D)
-            layout_y.append(k*grid_spc*D)
+            layout_x.append(i * grid_spc * D)
+            layout_y.append(k * grid_spc * D)
 
     # Check dist and determine what to do
     if dist == 0:
@@ -547,18 +548,22 @@ def make_floris_grid_layout(n_wt, D, grid_spc):
         pass
     elif dist > 0:
         # square>n_wt : remove locations
-        del(layout_x[close_square-dist:close_square])
-        del(layout_y[close_square-dist:close_square])
+        del layout_x[close_square - dist : close_square]
+        del layout_y[close_square - dist : close_square]
     else:
         # square < n_w_t : add a partial row
         for i in range(abs(dist)):
-            layout_x.append(np.sqrt(close_square)*grid_spc*D)
-            layout_y.append(i*grid_spc*D)
+            layout_x.append(np.sqrt(close_square) * grid_spc * D)
+            layout_y.append(i * grid_spc * D)
 
     return layout_x, layout_y
 
+
 import matplotlib.pyplot as plt
-#import seaborn as sns
+
+
+# import seaborn as sns
+
 
 def breakdown_plots(df):
     """"""
@@ -572,24 +577,24 @@ def breakdown_plots(df):
 
     x_data = df.column
 
-    #print(df[x_data[4]].index.tolist())
-    #df.T.plot(kind='bar', stacked=True, ax=ax)
+    # print(df[x_data[4]].index.tolist())
+    # df.T.plot(kind='bar', stacked=True, ax=ax)
     new_df = pd.DataFrame()
 
     # have to drop soft cost columns again.
-    #soft_costs=['construction_insurance_capex',
+    # soft_costs=['construction_insurance_capex',
     #            'decomissioning_costs', 'construction_financing', 'procurement_contingency_costs',
     #            'install_contingency_costs', 'project_completion_capex']
 
-    #for x in x_data:
+    # for x in x_data:
     #    new_df = pd.concat([new_df, df[x].T.drop(labels=soft_costs, axis=1)])
 
-    #new_df.plot(kind='bar', stacked=True, ax=ax, color=sns.color_palette("Set1", len(new_df.iloc[0])))
-    plt.xticks(range(0,len(x_data)), xlabels, rotation=45)
+    # new_df.plot(kind='bar', stacked=True, ax=ax, color=sns.color_palette("Set1", len(new_df.iloc[0])))
+    plt.xticks(range(0, len(x_data)), xlabels, rotation=45)
     plt.tight_layout()
 
     ax.set_xlabel("")
     ax.set_ylabel("CapEx ($)")
 
-    #handles, labels = ax.get_legend_handles_labels()
-    ax.legend(bbox_to_anchor=(1.5, 0), loc='lower right', reverse=True)
+    # handles, labels = ax.get_legend_handles_labels()
+    ax.legend(bbox_to_anchor=(1.5, 0), loc="lower right", reverse=True)
